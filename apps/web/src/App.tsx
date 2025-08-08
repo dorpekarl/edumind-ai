@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { AppRoutes } from './routes';
 import { useEffect } from 'react';
 import { ThemeToggle } from '@edumind/shared/src/components/ThemeToggle';
+import AuthGate from './components/AuthGate';
 
 export default function App() {
   const location = useLocation();
@@ -38,7 +39,9 @@ export default function App() {
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <AppRoutes />
+        <AuthGate>
+          <AppRoutes />
+        </AuthGate>
       </main>
     </div>
   );
