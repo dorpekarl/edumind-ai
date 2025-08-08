@@ -7,12 +7,16 @@ import Subscription from './pages/Subscription';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Onboarding from './pages/Onboarding';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Dashboard />} />
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/flashcards" element={<Flashcards />} />
       <Route path="/analytics" element={<Analytics />} />
