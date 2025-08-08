@@ -11,6 +11,7 @@ import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-
 import html2pdf from 'html2pdf.js';
 import { Document, Packer, Paragraph } from 'docx';
 import { supabase } from '../supabaseClient';
+import { createOfflineKV } from '@edumind/shared/src/utils/offline';
 
 SyntaxHighlighter.registerLanguage('typescript', ts);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -19,14 +20,25 @@ type Message = { id?: string; role: 'user' | 'assistant' | 'system'; message: st
 
 type Mode = 'summary' | 'deep' | 'quiz';
 
+const offline = createOfflineKV('chat');
+
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<Mode>('summary');
   const [speaking, setSpeaking] = useState(false);
+  const [rate, setRate] = useState(1.0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+
+  useEffect(() => {
+    offline.get<Message[]>('recent').then((m) => { if (m) setMessages(m); });
+  }, []);
+
+  useEffect(() => {
+    offline.set('recent', messages.slice(-50));
+  }, [messages]);
 
   useEffect(() => {
     const sub = supabase
@@ -97,11 +109,17 @@ export default function Chat() {
     URL.revokeObjectURL(url);
   }
 
+  function stopSpeaking() {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
+  }
+
   function speak(text: string) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1.0;
+    utter.rate = rate;
     utter.onend = () => setSpeaking(false);
     setSpeaking(true);
     window.speechSynthesis.speak(utter);
@@ -121,6 +139,11 @@ export default function Chat() {
         </select>
         <button onClick={exportPDF} className="px-3 py-2 bg-primary text-white rounded-md">Export PDF</button>
         <button onClick={exportWord} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 rounded-md">Export Word</button>
+        <div className="flex items-center gap-2 ml-auto text-sm">
+          <label>Rate</label>
+          <input type="range" min={0.5} max={1.5} step={0.1} value={rate} onChange={(e)=>setRate(parseFloat(e.target.value))} />
+          {speaking ? <button className="px-2 py-1 border rounded" onClick={stopSpeaking}>Stop</button> : null}
+        </div>
       </div>
 
       <div id="chat-export" ref={containerRef} className="space-y-3">
